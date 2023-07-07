@@ -1,12 +1,14 @@
 from MDT693B import MDT693B
 import numpy as np
 
+volts_per_micron = 150.0/310
+two_piezo_distance_cm = 9.128
 
 class AbsorberAttractorAssembly:
     def __init__(self, controller_port, **kwargs):
         self.piezo_controller = MDT693B(controller_port)
-        self.volts_per_micron = kwargs.get('volts_per_micron', 150.0/1150)  # using available stroke of piezo
-        self.two_piezo_distance_cm = kwargs.get('two_piezo_distance_cm', 9.128)  # from SW model
+        self.volts_per_micron = kwargs.get('volts_per_micron', volts_per_micron)  # using available stroke of piezo
+        self.two_piezo_distance_cm = kwargs.get('two_piezo_distance_cm', two_piezo_distance_cm)  # from SW model
         self.matrices = dict(
             theta=-1 * np.sqrt(3)/4 * self.two_piezo_distance_cm * 1e4 * np.array([1.0, -0.5, -0.5]),
             phi=self.two_piezo_distance_cm * 1e4 * np.array([0., -0.5, 0.5])
