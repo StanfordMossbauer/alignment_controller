@@ -56,8 +56,6 @@ class BPC303:
         self._blink()  # verify the connection by making all the channels flash
 
         atexit.register(self._atexit)  # autoclose port when program terminates
-
-        self.full_range = 1150 # um (from APF710 manual), not yet used
         return
 
     def _atexit(self):
@@ -114,6 +112,20 @@ class BPC303:
         self.write(cmd)
         return self.read().position
 
+    def set_position(self, pos, ch):
+        cmd = apt.pz_set_outputpos(dest=self.bayid(ch), source=self.HOST, chan_ident=1, position=pos)
+        return
+
+    def get_voltage(self, ch):
+        cmd = apt.pz_req_outputvolts(dest=self.bayid(ch), source=self.HOST, chan_ident=1)
+        self.write(cmd)
+        return self.read().voltage
+
+    def set_voltage(self, v, ch):
+        cmd = apt.pz_set_outputvolts(dest=self.bayid(ch), source=self.HOST, chan_ident=1, voltage=v)
+        self.write(cmd)
+        return
+
     def write_read(self, cmd):
         self.write(cmd)
         return self.read()
@@ -129,10 +141,6 @@ class BPC303:
         self.write(cmd)
         return
 
-    def set_position(self, pos, ch):
-        # TODO placeholder
-        return
-
     def get_status(self, ch):
         """Get basic information about the channel"""
         cmd = apt.hw_start_updatemsgs(dest=self.bayid(ch), source=self.HOST)
@@ -143,5 +151,15 @@ class BPC303:
             print(key + ':', item)
         return r
 
+    def get_outputmaxvolts(self, ch):
+        cmd = apt.pz_req_outputmaxvolts(dest=self.bayid(ch), source=self.HOST, chan_ident=1)
+        r = self.write_read(cmd)
+        return r.voltage/10  # somehow the unit is x10
+
+    def set_outputmaxvolts(self, v, ch):
+        cmd = apt.pz_set_outputmaxvolts(dest=self.bayid(ch), source=self.HOST, chan_ident=1, voltage=int(10*v))
+        self.write(cmd)
+        return
+
 if __name__=='__main__':
-    c = BPC303('COM4')
+    c = BPC303('COM5')

@@ -10,7 +10,7 @@ from AbsorberAttractorAssembly import *
 piezo_controller_port = 'COM3'
 bridge_resource_name = 'GPIB0::28::INSTR'
 
-if (AAA in locals()) or (AAA in globals()):
+if ('AAA' in locals()) or ('AAA' in globals()):
     AAA.piezo_controller.close()
 AAA = AbsorberAttractorAssembly(piezo_controller_port)
 bridge = AH2550A(bridge_resource_name, timeout=1e4)
@@ -19,8 +19,8 @@ stepsize = 1  # Volts
 samples_per_voltage = 2
 
 for stepsize, samples_per_voltage in zip(
-        (1, 1, 0.1, 0.1, 0.01),
-        (2, 2, 5, 5, 10),
+        (.01,),
+        (0.01,),
     ):
     basename = '{dt}_voltagescan_{stepsize}Vstep'.format(
         dt=time.strftime('%Y%m%d_%H%M%S'),
@@ -29,6 +29,8 @@ for stepsize, samples_per_voltage in zip(
 
     voltages, step = np.linspace(0, 150, int(150*(1/stepsize)) + 1, retstep=True)
     assert step==stepsize, "something wrong with linspace"
+    
+    fig = plt.figure()
 
     for direction in ('decreasing', 'increasing'):
         voltages = voltages[::-1]
