@@ -27,6 +27,8 @@ class BPC303:
 
         NOTE: There is some way to continuously stream all the positions (see
               MGMSG_HW_START_UPDATEMSGS in manual) but I couldn't figure it out.
+
+        TODO: set SLEW RATE to fix voltage changes
         """
         # copied from thorlabs_apt_device.enum
         endpoints = dict(
@@ -56,6 +58,8 @@ class BPC303:
         self._blink()  # verify the connection by making all the channels flash
 
         atexit.register(self._atexit)  # autoclose port when program terminates
+
+        self.microns_per_bit = 15/32767
         return
 
     def _atexit(self):
@@ -110,10 +114,13 @@ class BPC303:
         # this uses bay=channel, channel=1 (see bayid function)
         cmd = apt.pz_req_outputpos(dest=self.bayid(ch), source=self.HOST, chan_ident=1)
         self.write(cmd)
-        return self.read().position
+        return self.read().position*self.microns_per_bit
 
     def set_position(self, pos, ch):
-        cmd = apt.pz_set_outputpos(dest=self.bayid(ch), source=self.HOST, chan_ident=1, position=pos)
+        posbit = int((pos/self.microns_per_bit) + 0.5)
+        print(posbit)
+        cmd = apt.pz_set_outputpos(dest=self.bayid(ch), source=self.HOST, chan_ident=1, position=posbit)
+        self.write(cmd)
         return
 
     def get_voltage(self, ch):
@@ -160,6 +167,19 @@ class BPC303:
         cmd = apt.pz_set_outputmaxvolts(dest=self.bayid(ch), source=self.HOST, chan_ident=1, voltage=int(10*v))
         self.write(cmd)
         return
+
+    def get_mode(self, ch):
+        cmd = apt.pz_req_positioncontrolmode(dest=self.bayid(ch), source=self.HOST, chan_ident=1)
+        r = self.write_read(cmd)
+        rdict = {1: 'open_loop', 2: 'closed_loop'}
+        return rdict[r.mode]
+
+    def set_mode(self, mode, ch):
+        rdict = {'open_loop': 3, 'closed_loop': 4}  # force smooth transitions
+        cmd = apt.pz_set_positioncontrolmode(dest=self.bayid(ch), source=self.HOST, chan_ident=1, mode=rdict[mode])
+        self.write(cmd)
+        return
+
 
 if __name__=='__main__':
     c = BPC303('COM5')
